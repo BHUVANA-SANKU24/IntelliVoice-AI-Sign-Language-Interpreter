@@ -1,5 +1,5 @@
 
-# 🤟 IntelliVoice – AI Sign Language Interpreter
+#  IntelliVoice – AI Sign Language Interpreter
 
 IntelliVoice is a real-time AI-powered sign language interpreter that enables seamless communication between deaf/mute individuals and others. The system uses computer vision to detect hand gestures and convert them into text and speech, while also supporting text-to-sign animation for two-way interaction.
 

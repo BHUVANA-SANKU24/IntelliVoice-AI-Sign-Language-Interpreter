@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IntelliVoice – Two-Way Sign Language Interpreter</title>
+  <meta name="description"
+    content="IntelliVoice – AI-powered real-time ASL sign language interpreter with confidence scoring, conversation mode, and speech output." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+  <!-- Animated Background -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg class="logo-icon-svg" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"
+            aria-label="IntelliVoice">
+            <circle cx="20" cy="20" r="6" fill="#977DFF" />
+            <path d="M20 20 Q14 11 8 14" stroke="#977DFF" stroke-width="2" stroke-linecap="round" fill="none"
+              opacity="0.7" />
+            <path d="M20 20 Q26 11 32 14" stroke="#407EBC" stroke-width="2" stroke-linecap="round" fill="none"
+              opacity="0.7" />
+            <path d="M20 20 Q14 29 8 26" stroke="#407EBC" stroke-width="2" stroke-linecap="round" fill="none"
+              opacity="0.5" />
+            <path d="M20 20 Q26 29 32 26" stroke="#977DFF" stroke-width="2" stroke-linecap="round" fill="none"
+              opacity="0.5" />
+            <ellipse cx="8" cy="14" rx="3" ry="2" fill="#977DFF" opacity="0.8" />
+            <ellipse cx="32" cy="14" rx="3" ry="2" fill="#407EBC" opacity="0.8" />
+            <ellipse cx="8" cy="26" rx="2" ry="3" fill="#407EBC" opacity="0.6" />
+            <ellipse cx="32" cy="26" rx="2" ry="3" fill="#977DFF" opacity="0.6" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="logo-title">IntelliVoice</h1>
+          <p class="logo-sub">Two-Way Sign Language Interpreter</p>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <!-- Conversation Mode Toggle -->
+        <button class="btn btn-ghost conv-btn" id="convModeBtn" title="Toggle Conversation Mode">
+          🔄 Conversation Mode
+        </button>
+      </div>
+
+      <div class="header-actions">
+        <span class="badge badge-asl">ASL</span>
+        <span class="badge badge-ai">AI Powered</span>
+        <span class="badge badge-live" id="liveIndicator">⬤ Live</span>
+        <!-- Font Size -->
+        <button class="icon-btn" id="fontSizeBtn" title="Increase text size">🔤</button>
+        <!-- Dark/Light Toggle -->
+        <button class="icon-btn" id="themeToggleBtn" title="Toggle Light/Dark mode">🌙</button>
+        <!-- Dashboard -->
+        <button class="icon-btn" id="dashboardBtn" title="Performance Dashboard">📊</button>
+        <!-- History -->
+        <button class="icon-btn" id="historyBtn" title="Conversation History">📋</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Conversation Mode Banner -->
+  <div class="conv-banner" id="conversationBanner">
+    🔄 <strong>Conversation Mode Active</strong> — Signs detected will automatically animate in Text→Sign
+    <button class="conv-banner-close" id="convBannerClose">✕</button>
+  </div>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main" id="mainContent">
+
+    <!-- ===== PANEL A: Sign → Text ===== -->
+    <section class="panel panel-left" id="panelSignToText">
+      <div class="panel-header">
+        <div class="panel-icon sign-icon">📷</div>
+        <div>
+          <h2 class="panel-title">Sign → Text</h2>
+          <p class="panel-desc">Show ASL signs to your camera</p>
+        </div>
+        <span class="direction-arrow">→</span>
+      </div>
+
+      <!-- Camera Feed -->
+      <div class="camera-wrapper" id="cameraWrapper">
+        <video id="videoInput" autoplay muted playsinline class="camera-feed"></video>
+        <canvas id="landmarkCanvas" class="landmark-overlay"></canvas>
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <div class="camera-placeholder-inner">
+            <div class="camera-icon-wrap">
+              <div class="camera-icon">📷</div>
+              <div class="camera-spinner" id="cameraSpinner"></div>
+            </div>
+            <p>Camera feed will appear here</p>
+          </div>
+        </div>
+        <!-- Detection overlay -->
+        <div class="detection-overlay" id="detectionOverlay">
+          <div class="detected-letter" id="detectedLetter">–</div>
+          <div class="detection-label">No hand detected</div>
+        </div>
+        <!-- Confidence bar -->
+        <div class="confidence-bar-wrap">
+          <div class="confidence-bar" id="confidenceBar"></div>
+        </div>
+      </div>
+
+      <!-- LIVE CONFIDENCE DISPLAY -->
+      <div class="confidence-display" id="confidenceDisplay" style="display:none;"></div>
+
+      <!-- Camera Controls -->
+      <div class="camera-controls">
+        <button class="btn btn-primary" id="startCameraBtn">
+          <span class="btn-icon">▶</span> Start Camera
+        </button>
+        <button class="btn btn-ghost" id="stopCameraBtn" disabled>
+          <span class="btn-icon">⏹</span> Stop
+        </button>
+        <button class="btn btn-ghost" id="clearTranscriptBtn">
+          <span class="btn-icon">🗑</span> Clear
+        </button>
+        <!-- Auto-speak toggle -->
+        <label class="toggle-label" title="Auto-speak detected words">
+          <input type="checkbox" id="autoSpeakToggle" />
+          <span class="toggle-track"></span>
+          <span>Auto-Speak</span>
+        </label>
+      </div>
+
+      <!-- Transcript -->
+      <div class="transcript-box">
+        <div class="transcript-header">
+          <span class="transcript-label">📝 Transcript</span>
+          <div class="transcript-actions">
+            <button class="icon-btn" id="speakBtn" title="Speak transcript">🔊</button>
+            <button class="icon-btn" id="polishBtn" title="Grammar Polish with AI">✨ Polish</button>
+            <button class="icon-btn" id="copyBtn" title="Copy transcript">📋</button>
+          </div>
+        </div>
+        <div class="transcript-content" id="transcriptContent">
+          <span class="placeholder-text">Detected signs will appear here…</span>
+        </div>
+        <div class="word-buffer">
+          <span class="buffer-label">Building: </span>
+          <span class="buffer-word" id="wordBuffer">_</span>
+        </div>
+      </div>
+
+      <!-- Hold Duration Slider -->
+      <div class="settings-row">
+        <label class="setting-label">Hold duration</label>
+        <input type="range" id="holdDuration" min="300" max="2000" value="800" class="slider" />
+        <span class="setting-val" id="holdDurationVal">0.8s</span>
+      </div>
+    </section>
+
+    <!-- ===== Divider ===== -->
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-icon">⇄</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <!-- ===== PANEL B: Text → Sign ===== -->
+    <section class="panel panel-right" id="panelTextToSign">
+      <div class="panel-header">
+        <div class="panel-icon text-icon">✍️</div>
+        <div>
+          <h2 class="panel-title">Text → Sign</h2>
+          <p class="panel-desc">Type or speak to see signs</p>
+        </div>
+        <span class="direction-arrow">→</span>
+      </div>
+
+      <!-- Sign Photo Display -->
+      <div class="sign-display-wrapper" id="signDisplayWrapper">
+        <img id="signPhoto" class="sign-photo" src="" alt="ASL hand sign" style="display:none;" />
+        <div class="sign-placeholder" id="signPlaceholder">
+          <div class="hand-icon">🤚</div>
+          <p>Type text and click Animate</p>
+        </div>
+        <div class="current-sign-label" id="currentSignLabel"></div>
+        <div class="sign-photo-bg" id="signPhotoBg"></div>
+        <div class="sign-progress-wrap">
+          <div class="sign-progress-bar" id="signProgressBar"></div>
+        </div>
+      </div>
+
+      <!-- Animation Controls -->
+      <div class="sign-controls">
+        <button class="btn btn-ghost icon-only" id="prevSignBtn" title="Previous">⏮</button>
+        <button class="btn btn-primary" id="animateBtn">
+          <span class="btn-icon">▶</span> Animate
+        </button>
+        <button class="btn btn-ghost icon-only" id="pauseSignBtn" title="Pause/Resume">⏸</button>
+        <button class="btn btn-ghost icon-only" id="nextSignBtn" title="Next">⏭</button>
+        <button class="btn btn-ghost icon-only" id="loopSignBtn" title="Loop">🔁</button>
+        <!-- Slow-mo toggle -->
+        <button class="btn btn-ghost icon-only" id="slowMoBtn" title="Slow Motion">🐢</button>
+      </div>
+
+      <!-- Speed Slider -->
+      <div class="settings-row">
+        <label class="setting-label">Animation speed</label>
+        <input type="range" id="signSpeed" min="300" max="3000" value="900" class="slider" />
+        <span class="setting-val" id="signSpeedVal">0.9s</span>
+      </div>
+
+      <!-- Text Input -->
+      <div class="text-input-area">
+        <div class="text-input-header">
+          <span class="transcript-label">💬 Input Text</span>
+          <div style="display:flex;gap:6px;">
+            <button class="icon-btn mic-btn" id="micBtn" title="Voice input">🎤</button>
+            <button class="icon-btn" id="addHistoryBtn" title="Save to history">💾</button>
+          </div>
+        </div>
+        <textarea id="textInput" class="text-input" rows="3"
+          placeholder="Type text here or use the microphone… (e.g. HELLO WORLD)"></textarea>
+        <div class="char-counter"><span id="charCount">0</span> characters</div>
+      </div>
+
+      <!-- Sign Index -->
+      <div class="sign-index" id="signIndex"></div>
+    </section>
+
+  </main>
+
+  <!-- ===== ASL Reference Panel ===== -->
+  <section class="reference-panel">
+    <h3 class="ref-title">ASL Alphabet Reference</h3>
+    <div class="ref-grid" id="refGrid"></div>
+  </section>
+
+  <!-- ===== Performance Dashboard Sidebar ===== -->
+  <aside class="dashboard-panel" id="dashboardPanel">
+    <div class="dashboard-header">
+      <span>📊 Performance Dashboard</span>
+      <button class="icon-btn" id="closeDashBtn">✕</button>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="dash-label">Total Translations</div>
+        <div class="dash-value" id="dash-total">0</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-label">Avg Confidence</div>
+        <div class="dash-value" id="dash-accuracy">–</div>
+        <div class="dash-bar-track">
+          <div class="dash-bar" id="dash-accuracy-bar"></div>
+        </div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-label">Avg Detection Time</div>
+        <div class="dash-value" id="dash-speed">–</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-label">Session Uptime</div>
+        <div class="dash-value mono" id="dash-uptime">00:00</div>
+      </div>
+    </div>
+    <div class="dash-legend">
+      <span style="color:#4ade80">🟢 &gt;85% High</span>
+      <span style="color:#fbbf24">🟡 60–85% Med</span>
+      <span style="color:#f87171">🔴 &lt;60% Low</span>
+    </div>
+  </aside>
+
+  <!-- ===== Conversation History Sidebar ===== -->
+  <aside class="history-panel" id="historyPanel">
+    <div class="dashboard-header">
+      <span>📋 Conversation History</span>
+      <div style="display:flex;gap:6px">
+        <button class="icon-btn" id="exportHistoryBtn" title="Export .txt">⬇ Export</button>
+        <button class="icon-btn" id="clearHistoryBtn" title="Clear history">🗑</button>
+        <button class="icon-btn" id="closeHistoryBtn">✕</button>
+      </div>
+    </div>
+    <div class="history-list" id="historyList">
+      <p class="history-empty">No history yet. Start signing or typing!</p>
+    </div>
+  </aside>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ===== Status Bar ===== -->
+  <div class="status-bar">
+    <span class="status-item" id="statusCamera">📷 Camera: Off</span>
+    <span class="status-item" id="statusMic">🎤 Mic: Ready</span>
+    <span class="status-item" id="statusLetters">🔡 Letters: 0</span>
+    <span class="status-item" id="statusFPS">⚡ FPS: –</span>
+    <span class="status-item" id="statusMode">⚙ Normal Mode</span>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toastEl"></div>
+
+  <!-- Scripts (order matters) -->
+  <script src="js/signDictionary.js"></script>
+  <script src="js/gestureDetector.js"></script>
+  <script src="js/signToText.js"></script>
+  <script src="js/textToSign.js"></script>
+  <script src="js/conversationMode.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/parallax.js"></script>
+</body>
+
+</html>

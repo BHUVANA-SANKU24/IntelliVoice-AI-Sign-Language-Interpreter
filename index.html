@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IntelliVoice – AI-Powered Sign Language Interpreter</title>
+  <meta name="description"
+    content="IntelliVoice – AI-powered two-way ASL sign language interpreter. Break communication barriers with real-time gesture recognition and text-to-sign animation." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       IntelliVoice – Home Page
+       Color palette: navy/teal/indigo, color-blind friendly
+    ============================================================ */
+    :root {
+      --bg: #06091a;
+      --navy: #083A4F;
+      --teal: #407EBC;
+      --aqua: #C8D5D6;
+      --sand: #E5E1DD;
+      --indigo: #977DFF;
+      --blue: #0033FF;
+      --deep: #0600AB;
+      --card: rgba(151, 125, 255, 0.05);
+      --border: rgba(151, 125, 255, 0.14);
+      --text: #f0f4ff;
+      --muted: #8892b0;
+      --font-display: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+      --font-body: 'DM Sans', 'Inter', sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: auto;
+    }
+
+    /* ---- Animated BG ---- */
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(130px);
+      will-change: transform;
+    }
+
+    .o1 {
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, #0033FF, transparent 70%);
+      top: -220px;
+      left: -180px;
+      opacity: .22;
+      animation: orbFloat 14s ease-in-out infinite;
+    }
+
+    .o2 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, #977DFF, transparent 70%);
+      bottom: -180px;
+      right: -160px;
+      opacity: .2;
+      animation: orbFloat 16s ease-in-out infinite reverse;
+      animation-delay: 4s;
+    }
+
+    .o3 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, #407EBC, transparent 70%);
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: .15;
+      animation: orbFloat 20s ease-in-out infinite;
+      animation-delay: 10s;
+    }
+
+    @keyframes orbFloat {
+
+      0%,
+      100% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      33% {
+        transform: translate(30px, -20px) scale(1.04);
+      }
+
+      66% {
+        transform: translate(-20px, 30px) scale(0.97);
+      }
+    }
+
+    /* ---- Noise ---- */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.022;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* ---- Floating Particles ---- */
+    .particles {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+      animation: drift linear infinite;
+    }
+
+    @keyframes drift {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: .5;
+      }
+
+      90% {
+        opacity: .25;
+      }
+
+      100% {
+        transform: translateY(-10vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    /* ============================================================
+       NAVBAR (sticky top)
+    ============================================================ */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: rgba(6, 9, 26, 0.82);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(151, 125, 255, 0.12);
+      padding: 0 clamp(16px, 4vw, 56px);
+      display: flex;
+      align-items: center;
+      height: 64px;
+      gap: 16px;
+      transition: background 0.3s;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .nav-logo-icon {
+      width: 34px;
+      height: 34px;
+      filter: drop-shadow(0 0 8px rgba(151, 125, 255, 0.5));
+    }
+
+    .nav-logo-name {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #977DFF 0%, #407EBC 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-spacer {
+      flex: 1;
+    }
+
+    .nav-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(151, 125, 255, 0.1);
+      border: 1px solid rgba(151, 125, 255, 0.25);
+      border-radius: 100px;
+      padding: 5px 14px;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      color: #977DFF;
+      text-transform: uppercase;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #977DFF;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: .3;
+        transform: scale(.78);
+      }
+    }
+
+    /* ============================================================
+       HERO
+    ============================================================ */
+    .hero {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 96px clamp(20px, 5vw, 80px) 60px;
+    }
+
+    .hero-spotlight {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse at 50% 0%,
+          rgba(151, 125, 255, .14) 0%,
+          rgba(64, 126, 188, .07) 45%,
+          transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Hero eyebrow */
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(151, 125, 255, 0.1);
+      border: 1px solid rgba(151, 125, 255, 0.28);
+      border-radius: 100px;
+      padding: 6px 18px;
+      font-size: .73rem;
+      font-weight: 600;
+      letter-spacing: .07em;
+      color: #977DFF;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      animation: fadeDown .5s ease forwards;
+    }
+
+    /* Hero logo / icon */
+    .hero-logo-wrap {
+      margin-bottom: 24px;
+      animation: fadeDown .65s ease forwards;
+    }
+
+    .hero-logo-svg {
+      width: 88px;
+      height: 88px;
+      filter: drop-shadow(0 0 28px rgba(151, 125, 255, .45));
+      animation: breathe 4s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+
+      0%,
+      100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 28px rgba(151, 125, 255, .45));
+      }
+
+      50% {
+        transform: scale(1.06);
+        filter: drop-shadow(0 0 42px rgba(64, 126, 188, .6));
+      }
+    }
+
+    /* Hero title */
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      font-weight: 800;
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      margin-bottom: 18px;
+      background: linear-gradient(135deg, #fff 0%, #977DFF 40%, #407EBC 80%, #38c7f8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: fadeDown .75s ease forwards;
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 2.2vw, 1.3rem);
+      color: var(--muted);
+      max-width: 580px;
+      line-height: 1.75;
+      margin-bottom: 56px;
+      animation: fadeDown .9s ease forwards;
+    }
+
+    @keyframes fadeDown {
+      from {
+        opacity: 0;
+        transform: translateY(-16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ============================================================
+       MODE CARDS
+    ============================================================ */
+    .modes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      width: 100%;
+      max-width: 800px;
+      animation: fadeUp .9s ease forwards;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .mode-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 40px 36px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: transform .3s cubic-bezier(.34, 1.56, .64, 1),
+        border-color .3s, box-shadow .3s;
+    }
+
+    .mode-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .mode-card:hover {
+      transform: translateY(-9px) scale(1.012);
+    }
+
+    .mode-card:hover::before {
+      opacity: 1;
+    }
+
+    /* Variant: letter */
+    .mode-card.letter {
+      border-top: 3px solid #977DFF;
+    }
+
+    .mode-card.letter:hover {
+      border-color: #977DFF;
+      box-shadow: 0 24px 60px rgba(151, 125, 255, .2), 0 0 0 1px rgba(151, 125, 255, .15);
+    }
+
+    .mode-card.letter::before {
+      background: radial-gradient(circle at top left, rgba(151, 125, 255, .08), transparent 60%);
+    }
+
+    /* Variant: conversation */
+    .mode-card.conversation {
+      border-top: 3px solid #407EBC;
+    }
+
+    .mode-card.conversation:hover {
+      border-color: #407EBC;
+      box-shadow: 0 24px 60px rgba(64, 126, 188, .2), 0 0 0 1px rgba(64, 126, 188, .15);
+    }
+
+    .mode-card.conversation::before {
+      background: radial-gradient(circle at top left, rgba(64, 126, 188, .08), transparent 60%);
+    }
+
+    .mode-icon {
+      font-size: 2.6rem;
+      width: 68px;
+      height: 68px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .letter .mode-icon {
+      background: rgba(151, 125, 255, .12);
+    }
+
+    .conversation .mode-icon {
+      background: rgba(64, 126, 188, .12);
+    }
+
+    .mode-title {
+      font-family: var(--font-display);
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .mode-desc {
+      font-size: .92rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .mode-features {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .feature-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .82rem;
+      color: var(--muted);
+    }
+
+    .feature-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .letter .feature-dot {
+      background: #977DFF;
+    }
+
+    .conversation .feature-dot {
+      background: #407EBC;
+    }
+
+    .mode-cta {
+      margin-top: auto;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-family: var(--font-display);
+      font-size: .88rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      border: none;
+      cursor: pointer;
+      transition: all .25s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .letter .mode-cta {
+      background: linear-gradient(135deg, #977DFF, #0033FF);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(151, 125, 255, .3);
+    }
+
+    .letter .mode-cta:hover {
+      box-shadow: 0 12px 32px rgba(151, 125, 255, .5);
+      transform: translateY(-2px);
+    }
+
+    .conversation .mode-cta {
+      background: linear-gradient(135deg, #407EBC, #083A4F);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(64, 126, 188, .3);
+    }
+
+    .conversation .mode-cta:hover {
+      box-shadow: 0 12px 32px rgba(64, 126, 188, .5);
+      transform: translateY(-2px);
+    }
+
+    /* ============================================================
+       STATS STRIP
+    ============================================================ */
+    .stats {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 60px;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .stat {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(151, 125, 255, 0.13);
+      border-radius: 16px;
+      padding: 18px 28px;
+      transition: border-color .3s, box-shadow .3s, transform .3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(151, 125, 255, .06), rgba(64, 126, 188, .06));
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .stat:hover {
+      border-color: rgba(151, 125, 255, .4);
+      box-shadow: 0 0 24px rgba(151, 125, 255, .14);
+      transform: translateY(-4px);
+    }
+
+    .stat:hover::before {
+      opacity: 1;
+    }
+
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #977DFF, #407EBC);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+    }
+
+    .stat-label {
+      font-size: .72rem;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      position: relative;
+    }
+
+    /* ============================================================
+       SCROLL REVEAL
+    ============================================================ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity .75s ease, transform .75s ease;
+    }
+
+    .reveal.from-left {
+      transform: translateX(-32px);
+    }
+
+    .reveal.from-right {
+      transform: translateX(32px);
+    }
+
+    .reveal.scale-in {
+      transform: scale(0.92);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0) translateX(0) scale(1);
+    }
+
+    /* ============================================================
+       ABOUT US SECTION
+    ============================================================ */
+    .about {
+      position: relative;
+      z-index: 10;
+      padding: clamp(80px, 12vw, 140px) clamp(20px, 6vw, 100px);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: start;
+    }
+
+    /* section label */
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #977DFF;
+      margin-bottom: 18px;
+    }
+
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: linear-gradient(90deg, #977DFF, #407EBC);
+      border-radius: 2px;
+    }
+
+    .about-heading {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin-bottom: 24px;
+      color: #fff;
+    }
+
+    .about-heading span {
+      background: linear-gradient(135deg, #977DFF, #407EBC);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .about-body {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+
+    /* Pills */
+    .about-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 32px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(151, 125, 255, 0.08);
+      border: 1px solid rgba(151, 125, 255, 0.22);
+      border-radius: 100px;
+      padding: 7px 18px;
+      font-size: .8rem;
+      font-weight: 600;
+      color: #977DFF;
+      transition: background .25s, border-color .25s, transform .25s;
+    }
+
+    .pill:hover {
+      background: rgba(151, 125, 255, 0.16);
+      border-color: rgba(151, 125, 255, .45);
+      transform: translateY(-2px);
+    }
+
+    /* About right: feature cards */
+    .about-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .about-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px 28px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      transition: border-color .3s, box-shadow .3s, transform .3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .about-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #977DFF, #407EBC);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .about-card:hover {
+      border-color: rgba(151, 125, 255, .3);
+      box-shadow: 0 12px 40px rgba(151, 125, 255, .12);
+      transform: translateY(-4px);
+    }
+
+    .about-card:hover::after {
+      opacity: 1;
+    }
+
+    .about-card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .about-card:nth-child(1) .about-card-icon {
+      background: rgba(151, 125, 255, .13);
+    }
+
+    .about-card:nth-child(2) .about-card-icon {
+      background: rgba(64, 126, 188, .13);
+    }
+
+    .about-card:nth-child(3) .about-card-icon {
+      background: rgba(0, 51, 255, .1);
+    }
+
+    .about-card-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .about-card-text {
+      font-size: .87rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ============================================================
+       DIVIDER / WAVE
+    ============================================================ */
+    .section-divider {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(151, 125, 255, .25), transparent);
+    }
+
+    /* ============================================================
+       PAGE TRANSITION
+    ============================================================ */
+    .page-transition {
+      position: fixed;
+      inset: 0;
+      background: #06091a;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .4s ease;
+    }
+
+    .page-transition.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    .footer {
+      position: relative;
+      z-index: 10;
+      padding: 48px clamp(20px, 6vw, 80px) 36px;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 24px;
+      border-top: 1px solid rgba(151, 125, 255, .1);
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .footer-logo-icon {
+      width: 26px;
+      height: 26px;
+      opacity: 0.7;
+    }
+
+    .footer-name {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #977DFF, #407EBC);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .footer-note {
+      font-size: .72rem;
+      color: rgba(136, 146, 176, .55);
+      letter-spacing: .04em;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 768px) {
+      .about-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .nav-badge {
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .modes {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        gap: 10px;
+      }
+
+      .stat {
+        padding: 14px 18px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      .orb,
+      .particle,
+      .hero-logo-svg {
+        animation: none !important;
+      }
+
+      .reveal {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Animated BG -->
+  <div class="bg">
+    <div class="orb o1"></div>
+    <div class="orb o2"></div>
+    <div class="orb o3"></div>
+  </div>
+
+  <!-- Floating particles -->
+  <div class="particles" id="particles"></div>
+
+  <!-- Page transition overlay -->
+  <div class="page-transition" id="pageTransition"></div>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="nav" aria-label="Main navigation">
+    <a href="index.html" class="nav-logo">
+      <!-- IntelliVoice SVG Logo -->
+      <svg class="nav-logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="20" cy="20" r="6" fill="#977DFF" />
+        <path d="M20 20 Q14 11 8 14" stroke="#977DFF" stroke-width="2.2" stroke-linecap="round" fill="none"
+          opacity="0.8" />
+        <path d="M20 20 Q26 11 32 14" stroke="#407EBC" stroke-width="2.2" stroke-linecap="round" fill="none"
+          opacity="0.8" />
+        <path d="M20 20 Q14 29 8 26" stroke="#407EBC" stroke-width="2.2" stroke-linecap="round" fill="none"
+          opacity="0.55" />
+        <path d="M20 20 Q26 29 32 26" stroke="#977DFF" stroke-width="2.2" stroke-linecap="round" fill="none"
+          opacity="0.55" />
+        <ellipse cx="8" cy="14" rx="3.5" ry="2.2" fill="#977DFF" opacity="0.85" />
+        <ellipse cx="32" cy="14" rx="3.5" ry="2.2" fill="#407EBC" opacity="0.85" />
+        <ellipse cx="8" cy="26" rx="2.2" ry="3.5" fill="#407EBC" opacity="0.65" />
+        <ellipse cx="32" cy="26" rx="2.2" ry="3.5" fill="#977DFF" opacity="0.65" />
+      </svg>
+      <span class="nav-logo-name">IntelliVoice</span>
+    </a>
+
+    <div class="nav-spacer"></div>
+
+    <div class="nav-badge">
+      <span class="badge-dot"></span>
+      AI-Powered · Real-Time · ASL
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero" aria-label="Hero">
+    <div class="hero-spotlight"></div>
+
+    <div class="hero-eyebrow">
+      <span class="badge-dot"></span>
+      AI-Powered · Accessible · Real-Time
+    </div>
+
+    <!-- Hero logo -->
+    <div class="hero-logo-wrap">
+      <svg class="hero-logo-svg" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg"
+        aria-label="IntelliVoice">
+        <circle cx="44" cy="44" r="14" fill="#977DFF" opacity="0.9" />
+        <circle cx="44" cy="44" r="22" stroke="#977DFF" stroke-width="1" fill="none" opacity="0.25" />
+        <circle cx="44" cy="44" r="32" stroke="#407EBC" stroke-width="1" fill="none" opacity="0.15" />
+        <!-- Voice rays -->
+        <path d="M44 44 Q32 25 18 30" stroke="#977DFF" stroke-width="2.5" stroke-linecap="round" fill="none"
+          opacity="0.8" />
+        <path d="M44 44 Q56 25 70 30" stroke="#407EBC" stroke-width="2.5" stroke-linecap="round" fill="none"
+          opacity="0.8" />
+        <path d="M44 44 Q32 63 18 58" stroke="#407EBC" stroke-width="2.5" stroke-linecap="round" fill="none"
+          opacity="0.6" />
+        <path d="M44 44 Q56 63 70 58" stroke="#977DFF" stroke-width="2.5" stroke-linecap="round" fill="none"
+          opacity="0.6" />
+        <!-- Nodes -->
+        <ellipse cx="18" cy="30" rx="5.5" ry="3.5" fill="#977DFF" opacity="0.9" />
+        <ellipse cx="70" cy="30" rx="5.5" ry="3.5" fill="#407EBC" opacity="0.9" />
+        <ellipse cx="18" cy="58" rx="3.5" ry="5.5" fill="#407EBC" opacity="0.75" />
+        <ellipse cx="70" cy="58" rx="3.5" ry="5.5" fill="#977DFF" opacity="0.75" />
+      </svg>
+    </div>
+
+    <h1 class="hero-title">IntelliVoice</h1>
+    <p class="hero-tagline">
+      A two-way AI sign language interpreter.<br />
+      Detect ASL signs from your camera, or convert text into animated hand signs — in real time.
+    </p>
+
+    <!-- Mode Cards -->
+    <div class="modes" role="list">
+
+      <!-- Letter Mode -->
+      <a class="mode-card letter" href="app.html" role="listitem">
+        <div class="mode-icon">📝</div>
+        <div>
+          <h2 class="mode-title">Letter Mode</h2>
+          <p class="mode-desc">Real-time letter-by-letter ASL interpretation in both directions.</p>
+        </div>
+        <div class="mode-features" aria-label="Features">
+          <div class="feature-row"><span class="feature-dot"></span>Camera detects each ASL letter</div>
+          <div class="feature-row"><span class="feature-dot"></span>Type text → see letter-by-letter signs</div>
+          <div class="feature-row"><span class="feature-dot"></span>Live confidence score 🟢🟡🔴</div>
+          <div class="feature-row"><span class="feature-dot"></span>Performance dashboard + history</div>
+        </div>
+        <button class="mode-cta">Start Letter Mode →</button>
+      </a>
+
+      <!-- Conversation Mode -->
+      <a class="mode-card conversation" href="conversation.html" role="listitem">
+        <div class="mode-icon">🗣️</div>
+        <div>
+          <h2 class="mode-title">Conversation Mode</h2>
+          <p class="mode-desc">Word-by-word interpretation with full audio playback of the entire conversation.</p>
+        </div>
+        <div class="mode-features" aria-label="Features">
+          <div class="feature-row"><span class="feature-dot"></span>Sign full words → word labels appear</div>
+          <div class="feature-row"><span class="feature-dot"></span>Type sentences → one word at a time</div>
+          <div class="feature-row"><span class="feature-dot"></span>Full conversation transcript</div>
+          <div class="feature-row"><span class="feature-dot"></span>🔊 Read entire conversation aloud</div>
+        </div>
+        <button class="mode-cta">Start Conversation →</button>
+      </a>
+
+    </div>
+
+    <!-- Stats -->
+    <div class="stats reveal" aria-label="Key statistics">
+      <div class="stat">
+        <div class="stat-num">26</div>
+        <div class="stat-label">ASL Letters</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">20+</div>
+        <div class="stat-label">Word Patterns</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">Real-Time</div>
+        <div class="stat-label">Detection</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Browser Only</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ABOUT US SECTION ===== -->
+  <div class="section-divider reveal"></div>
+
+  <section class="about" id="about" aria-label="About IntelliVoice">
+    <div class="about-grid">
+
+      <!-- Left: text content -->
+      <div class="reveal from-left">
+        <span class="section-label">About IntelliVoice</span>
+        <h2 class="about-heading">
+          Breaking barriers with<br />
+          <span>intelligent communication</span>
+        </h2>
+        <p class="about-body">
+          IntelliVoice is an AI-powered, browser-based sign language interpreter designed to make
+          communication effortless between deaf/hard-of-hearing individuals and hearing people.
+        </p>
+        <p class="about-body">
+          The problem is real: millions of people rely on sign language daily, yet most technology
+          offers little to bridge the gap. IntelliVoice solves this by providing real-time,
+          two-directional ASL interpretation — no apps to install, no specialized hardware required.
+        </p>
+        <div class="about-pills">
+          <span class="pill">♿ Accessibility First</span>
+          <span class="pill">🤖 AI Powered</span>
+          <span class="pill">🔒 100% Private</span>
+          <span class="pill">⚡ Real-Time</span>
+          <span class="pill">🌐 Browser Native</span>
+        </div>
+      </div>
+
+      <!-- Right: feature cards -->
+      <div class="about-cards reveal from-right">
+
+        <div class="about-card">
+          <div class="about-card-icon">🎯</div>
+          <div>
+            <div class="about-card-title">What It Does</div>
+            <div class="about-card-text">
+              Detects ASL hand signs from your camera in real time and converts them to text —
+              or animates any typed sentence into sequential hand sign images.
+            </div>
+          </div>
+        </div>
+
+        <div class="about-card">
+          <div class="about-card-icon">🤝</div>
+          <div>
+            <div class="about-card-title">Who It Helps</div>
+            <div class="about-card-text">
+              Designed for deaf and hard-of-hearing users, their families, educators, interpreters,
+              and anyone who wants to learn or communicate in ASL without barriers.
+            </div>
+          </div>
+        </div>
+
+        <div class="about-card">
+          <div class="about-card-icon">⚙️</div>
+          <div>
+            <div class="about-card-title">How It Works</div>
+            <div class="about-card-text">
+              Powered by MediaPipe hand landmark detection and a custom ASL classifier.
+              Everything runs locally in your browser — no data leaves your device.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer-brand">
+      <svg class="footer-logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true">
+        <circle cx="20" cy="20" r="6" fill="#977DFF" />
+        <path d="M20 20 Q14 11 8 14" stroke="#977DFF" stroke-width="2" stroke-linecap="round" fill="none"
+          opacity="0.8" />
+        <path d="M20 20 Q26 11 32 14" stroke="#407EBC" stroke-width="2" stroke-linecap="round" fill="none"
+          opacity="0.8" />
+        <ellipse cx="8" cy="14" rx="3" ry="2" fill="#977DFF" opacity="0.7" />
+        <ellipse cx="32" cy="14" rx="3" ry="2" fill="#407EBC" opacity="0.7" />
+      </svg>
+      <span class="footer-name">IntelliVoice</span>
+    </div>
+    <p class="footer-note">Powered by MediaPipe · Web Speech API · Runs fully in-browser · © 2026 IntelliVoice</p>
+  </footer>
+
+  <script>
+    /* ── Scroll Reveal ─────────────────────────────── */
+    const revealEls = document.querySelectorAll('.reveal');
+    const revealObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          // stagger siblings
+          const siblings = [...e.target.parentElement.querySelectorAll('.reveal:not(.visible)')];
+          siblings.forEach((sib, i) => {
+            setTimeout(() => sib.classList.add('visible'), i * 120);
+          });
+        }
+      });
+    }, { threshold: 0.12 });
+
+    revealEls.forEach(el => revealObs.observe(el));
+
+    // immediate check for above-fold
+    setTimeout(() => {
+      revealEls.forEach(el => {
+        const r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight) el.classList.add('visible');
+      });
+    }, 50);
+
+    /* ── Page Transition ───────────────────────────── */
+    const overlay = document.getElementById('pageTransition');
+    document.querySelectorAll('a.mode-card').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        overlay.classList.add('active');
+        setTimeout(() => { window.location.href = href; }, 380);
+      });
+    });
+    window.addEventListener('pageshow', () => { overlay.classList.remove('active'); });
+
+    /* ── Floating Particles ────────────────────────── */
+    const container = document.getElementById('particles');
+    const pColors = ['#977DFF', '#407EBC', '#38c7f8', '#C8D5D6', '#0033FF'];
+    for (let i = 0; i < 28; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 2 + Math.random() * 4;
+      const color = pColors[Math.floor(Math.random() * pColors.length)];
+      p.style.cssText = `
+        width:${size}px;height:${size}px;
+        left:${Math.random() * 100}%;
+        background:${color};
+        box-shadow:0 0 ${size * 3}px ${color};
+        animation-duration:${9 + Math.random() * 14}s;
+        animation-delay:${-Math.random() * 20}s;
+      `;
+      container.appendChild(p);
+    }
+
+    /* ── Mouse Parallax on BG Orbs ─────────────────── */
+    const orbs = [...document.querySelectorAll('.orb')];
+    const STRENGTH = [45, -35, 25];
+    const LERP = 0.07;
+    let m = { x: 0.5, y: 0.5 };
+    let tg = { x: 0.5, y: 0.5 };
+
+    document.addEventListener('mousemove', e => {
+      tg.x = e.clientX / window.innerWidth;
+      tg.y = e.clientY / window.innerHeight;
+    });
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    (function tick() {
+      m.x = lerp(m.x, tg.x, LERP);
+      m.y = lerp(m.y, tg.y, LERP);
+      const cx = m.x - 0.5;
+      const cy = m.y - 0.5;
+      orbs.forEach((orb, i) => {
+        const s = STRENGTH[i] || 25;
+        orb.style.transform = `translate(${cx * s}px, ${cy * s}px)`;
+      });
+      requestAnimationFrame(tick);
+    })();
+
+    /* ── Card 3-D Tilt ──────────────────────────────── */
+    const cards = [...document.querySelectorAll('.mode-card')];
+    const TILT = 5;
+
+    document.addEventListener('mousemove', e => {
+      const mxN = e.clientX / window.innerWidth;
+      const myN = e.clientY / window.innerHeight;
+      cards.forEach(card => {
+        const r = card.getBoundingClientRect();
+        const ccx = (r.left + r.width / 2) / window.innerWidth;
+        const ccy = (r.top + r.height / 2) / window.innerHeight;
+        const ry = (mxN - ccx) * TILT;
+        const rx = (ccy - myN) * TILT;
+        card.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+      });
+    });
+
+    cards.forEach(card => {
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(900px) rotateX(0) rotateY(0) translateY(-9px) scale(1.012)';
+        setTimeout(() => {
+          card.style.transform = '';
+        }, 300);
+      });
+    });
+
+    /* ── Scroll-parallax for hero bg ───────────────── */
+    window.addEventListener('scroll', () => {
+      const sy = window.scrollY;
+      document.querySelector('.hero-spotlight').style.transform =
+        `translateX(-50%) translateY(${sy * 0.18}px)`;
+    }, { passive: true });
+  </script>
+</body>
+
+</html>

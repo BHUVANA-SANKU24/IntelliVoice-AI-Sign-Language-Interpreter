@@ -57,36 +57,6 @@ IntelliVoice is a real-time AI-powered sign language interpreter that enables se
 
 ---
 
-## 📁 Project Structure
-
-```
-📦 IntelliVoice
- ┣ 📜 index.html
- ┣ 📜 app.html
- ┣ 📜 conversation.html
- ┣ 📜 style.css
- ┣ 📜 app.js
- ┣ 📜 gestureDetector.js
- ┣ 📜 dashboard.js
- ┗ 📜 conversationMode.js
-```
-
----
-
-## ▶️ Run Locally
-
-1. Clone the repository:
-
-```
-git clone https://github.com/your-username/intellivoice.git
-```
-
-2. Open the project folder
-
-3. Run using Live Server (recommended)
-
----
-
 ## 🎯 Future Improvements
 
 * Add custom-trained deep learning model (CNN/LSTM)
